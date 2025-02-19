@@ -8,7 +8,9 @@ import org.hibernate.query.Query;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Main {
 
@@ -19,10 +21,8 @@ public class Main {
 
         // tu wstaw kod aplikacji
 
-
         //main.addUser();
         //main.printUsers();
-
 
 		/*main.addUser();
 		main.addAlbum("John album 1");
@@ -46,6 +46,7 @@ public class Main {
         //main.deleteAlbum();
         //main.deleteAlbum2();
 
+
         // PICTURE
         // main.deletePhoto();
 
@@ -66,21 +67,20 @@ public class Main {
         User user = null;
         try {
             do {
-
-                System.out.println("****** START    ");
+                System.out.println();
+                System.out.println("***** ALBUM MANAGERvO1 *****");
                 boolean isUserAccountExis = false;
                 boolean isLogin;
                 do {
                     System.out.println("select option: 1 - log in, 2 - create account");
-                    input = br.readLine();
-                    if (input.equals("1")) {
+                    String decision0 = br.readLine();
+                    if (decision0.equals("1")) {
 
-                        //boolean isLogin;
                         do {
                             isLogin = false;
                             System.out.println("log in. user name: ");
                             String userName = br.readLine();
-                            isUserAccountExis = main.checkIfUserExistsInDatabase(userName);
+                            isUserAccountExis = main.checkIfUserExistsInDatabase(userName); // to do - change name xD
                             if (isUserAccountExis) {
                                 user = main.getUserFromDatabase(userName);
                                 System.out.println("Welcome " + user.getName());
@@ -90,7 +90,7 @@ public class Main {
                                 System.out.println("selec option: 1 - create account, 2 - try again");
                                 String decision1 = br.readLine();
                                 if (decision1.equals("1")) {
-                                    main.addUser(userName);
+                                    main.addUser(userName); // to do ????
                                     user = main.getUserFromDatabase(userName);
                                     isUserAccountExis = true;
                                     isLogin = true;
@@ -101,8 +101,6 @@ public class Main {
                                     System.out.println("[E2] input is not correct");
                                 }
                             }
-
-                            //System.out.println("islogin: " + isLogin);
                         } while (!isLogin);
 
 
@@ -144,48 +142,52 @@ public class Main {
 
                     System.out.println("select option: " +
                             "1 - addAlbum," +
-                            "2 - removeAlbum," +
+                            "2 - removeAlbum, " +
                             "3 - showMyAlbums, " +
-                            "4 - showAllUsersAlbums, " +
-                            "5 - showUserAlbums" +
-                            "6 - showMyPictures, " +
-                            "7 - showUsersPicures" +
-                            "8 - showPictureInAlbum" +
-                            "9 - addPicture" +
-                            "10 - removePicture" +
-                            "11 - thumbsUp" +
-                            "11 - thombsDown" +
-                            "99 - logout");
-                    
+                            //"4 - showAllUsersAlbums, " +
+                            "5 - showUserAlbums, " +
+                            "6 - showMyPhotos, " +
+                            "7 - showUsersPhotos, " +
+                            "8 - showPhotosInAlbum, " +
+                            "9 - addPhoto, " +
+                            "10 - removePhoto ," +
+                            "11 - likePhoto, " +
+                            "12 - noLikePhoto, " +
+                            "99 - logout, "+
+                            "666 - removeYorselfFromDatabase, ");
+
                     input = br.readLine();
 
                     // addAlbum
                     if (input.equals("1")) {
                         System.out.println("ADD album name: ");
-                        String albumName = br.readLine();
+                        //String albumName = br.readLine();
 
                         boolean isAlbumExist;
-                        do{
+                        do {
                             isAlbumExist = false;
-                           int result = main.addAlbum3(user.getName(),albumName);
-                           if (result == 1) {
-                               System.out.println("Album added successfully.");
-                               isAlbumExist = true;
-                           }else{
-                               System.out.println("Album already exists.");
-                               System.out.println("Do you want to try again? 1 - yes, 2 - no");
-                               String decision2 = br.readLine();
-                               if (decision2.equals("1")) {
-                                   isAlbumExist = false;
-                               }
-                               else if (decision2.equals("2")) {
-                                   isAlbumExist = true;
-                               }
-                               else{
-                                   System.out.println("[E33] input is not correct");
-                               }
-                           }
-                        }while(isAlbumExist == false);
+                            String albumName = br.readLine();
+                            int result = main.getProcessingStatusWhileAddingAlbum(user, albumName);
+                            if (result == 1) {
+                                System.out.println("Album added successfully.");
+                                main.createNewAlbum(user, albumName);
+                                isAlbumExist = true;
+                                //input = "";
+                            }
+                            else if(result == 2) {
+                                System.out.println("Album already exists.");
+                                System.out.println("Do you want to try again with new name? 1-yes, 2-no");
+                                String decision2 = br.readLine();
+                                if (decision2.equals("1")) {
+                                    isAlbumExist = false;
+                                } else if (decision2.equals("2")) {
+                                    isAlbumExist = true;
+                                } else {
+                                    System.out.println("[E33] input is not correct");
+                                    isAlbumExist = true;
+                                }
+                            }
+                        } while (isAlbumExist == false);
 
 
                     }
@@ -194,63 +196,150 @@ public class Main {
                         System.out.println("REMOVE album name: ");
                         String albumName = br.readLine();
 
-                      if(main.isAlbumBelongToUser(user, albumName)){
-                          main.deleteAlbum2(user, albumName);
-                          System.out.println("Album removed successfully. All albums data were deleted.");
-                      }
-                      else{
-                          System.out.println("Album does not belong to user "+ user.getName() + ". Album cannot be deleted.");
-                      }
+                        if (main.isAlbumBelongToUser(user, albumName)) {
+                            main.deleteAlbum(user, albumName);
+                            System.out.println("Album removed successfully. All album data were deleted.");
+                            // input = "";
+                        } else {
+                            System.out.println("Album does not exist or does not belong to user " + user.getName() + ". Album cannot be deleted.");
+                            // input = "";
+                        }
 
 
                     }
                     //showMyAlbums
                     else if (input.equals("3")) {
-                        main.printAlbums();
+                        main.printUserAlbums(user);
+
                     }
-
-
-
-                } while (input.equals(input));
-
-                //input = br.readLine();
-
-                /*if(line.equals("u")) {
-                    System.out.println("user name:");
-                    line = br.readLine();
-                    main.addUser(line);
-                }
-
-
-                int result = 3;
-                if(line.equals("a")) {
-                    System.out.println("album name:");
-                    String line1 = br.readLine();
-                    System.out.println("user name:");
-                    String line2 = br.readLine();
-                    result = main.addAlbum3(line2, line1);
-                    if(result == 1) {
-                        System.out.println("Album added successfully");
+                    // showPhotoInAlbum
+                    else if (input.equals("8")) {
+                        //main.();
                     }
-                    else if(result == 2) {
-                        System.out.println("Do you want to add new album for user ? select option: newAlbumName, exit");
-                        String line3 = br.readLine();
-                        if(line3.equals("yes")) {
-                            System.out.println("album name:");
-                            String line4 = br.readLine();
-                            result = main.addAlbum3(line2, line1);
+                    // addPhoto
+                    else if (input.equals("9")) {
+                        System.out.println("album name where you want to add photo:");
+                        String albumName = br.readLine();
+
+                        if (main.isAlbumBelongToUser(user, albumName)) {
+                            System.out.println("ADD photo name: ");
+                            String photoName = br.readLine();
+
+                            boolean isPictureExist;
+                            do {
+                                isPictureExist = false;
+                                int result = main.getProcessingStatusWhileAddingPhoto(user, albumName, photoName);
+                                if (result == 1) {
+                                    main.addPhoto(photoName, albumName, user);
+                                    System.out.println("Photo added successfully.");
+                                    isPictureExist = true;
+                                }
+                                else if (result == 2) {
+                                    System.out.println("Photo already exists in album.");
+                                    System.out.println("Do you want to try again with new name? 1 - yes, 2 - no");
+                                    String decision2 = br.readLine();
+                                    if (decision2.equals("1")) {
+                                        isPictureExist = false;
+                                    } else if (decision2.equals("2")) {
+                                        isPictureExist = true;
+                                    } else {
+                                        System.out.println("[E7] input is not correct");
+                                        isPictureExist = true;
+                                    }
+                                }
+                            } while (isPictureExist == false);
+
+                        } else {
+                            System.out.println("Album does not exist or does not belong to user " + user.getName() + ". Photo cannot be added.");
                         }
                     }
-                    else if(result == 3) {
-                        System.out.println("Do you want to add this user to database with this album? select option: yes, no");
-                        String line3 = br.readLine();
-                        if(line3.equals("yes")) {
-                            main.addUser(line2);
-                            main.addAlbum3(line2, line1);
-                            System.out.println("User and album added successfully");
+                    // removePhoto
+                    else if (input.equals("10")) {
+                        System.out.println("REMOVE photo name:");
+                        String photoName = br.readLine();
+                        System.out.println("album name:");
+                        String albumName = br.readLine();
+
+                        /*if (main.isPictureBelongToUser(user, albumName, photoName)) {
+                            main.deletePhoto(photoName, albumName, user);
+                            System.out.println("Picture deleted successfully.");
+                        } else {
+                            System.out.println("Picture/ album does not exist or does not belong to user " + user.getName() + ". Picture cannot be deleted.");
+                        }*/
+
+                        int result = main.getProcessingStatusWhileAddingPhoto(user, albumName, photoName);
+                        if (result == 1) {
+                            System.out.println("Picture does not exist.");
+                        }
+                        else if (result == 2) {
+                            main.deletePhoto(photoName, albumName, user);
+                            System.out.println("Picture deleted successfully.");
                         }
                     }
-                }*/
+                    // addPhotoLike
+                    else if (input.equals("11")) {
+                        System.out.println("ADD like photo name: ");
+                        String photoName = br.readLine();
+                        System.out.println("album name for photo to like: ");
+                        String albumName = br.readLine();
+
+                        int result = main.getProcessingStatusForPhotoLike(user, albumName, photoName);
+                        if (result == 4) {
+                            main.addPhotoLlike(user, albumName, photoName);
+                            System.out.println("You like photo - added successfully.");
+                        }
+                        else if (result == 1) {
+                            System.out.println(user.getName() + " already like photo.");
+                        }
+                        else if (result == 2) {
+                           System.out.println("Photo does not exist in album.");
+                        }
+                        else if (result == 3) {
+                            System.out.println("Album does not exist.");
+                        }
+                    }
+                    // deletePhotoLike
+                    else if (input.equals("12")) {
+                        System.out.println("REMOVE photoLIKE, photo name:");
+                        String photoName = br.readLine();
+                        System.out.println("album name:");
+                        String albumName = br.readLine();
+
+                        int result = main.getProcessingStatusForPhotoLike(user, albumName, photoName);
+                        if (result == 4) {
+                            System.out.println("You never like photo.");
+                        }
+                        else if (result == 1) {
+                            main.deletePhotoLlike(user, albumName, photoName);
+                            System.out.println("You don't like photo - remove successfully.");
+                        }
+                        else if (result == 2) {
+                            System.out.println("Photo does not exist in album.");
+                        }
+                        else if (result == 3) {
+                            System.out.println("Album does not exist.");
+                        }
+                    }
+                    // removeYorselfFromDatabase
+                    else if (input.equals("666")) {
+                        System.out.println("Are you sure you want to remove yourself from database? 1-yes, 2-no");
+                        String goodbye = br.readLine();
+                        if (goodbye.equals("1")) {
+                            input = "exit2";
+                            System.out.println("Goodbye " +user.getName()+ "!");
+                            main.deleteUser(user);
+                        }
+                        else if (goodbye.equals("2")) {
+                        }
+                    }
+
+
+
+
+
+
+
+                } while (!input.equals("exit2"));
 
 
                 //line = "exit";
@@ -296,10 +385,10 @@ public class Main {
         return false;
     }
 
-    private int getUserId(String userName) {
+    /*private int getUserId(User user) {
 
         try {
-            String hql = "From User u where u.name=" + "'" + userName + "'";
+            String hql = "From User u where u.name=" + "'" + user.ge + "'";
             Query<User> query = session.createQuery(hql, User.class);
             User user = query.uniqueResult();
 
@@ -313,22 +402,20 @@ public class Main {
         }
         return 0;
 
-    }
+    }*/
 
     private void addUser(String userName) {
 
-        if (checkIfUserExistsInDatabase(userName)) {
-            System.out.println("User " + userName + " already exists");
-        } else {
+       // if (checkIfUserExistsInDatabase(userName)) {
+            //System.out.println("User " + userName + " already exists");
+        //} else {
             User user = new User();
-            // user.setName("John");
             user.setName(userName);
 
             Transaction transaction = session.beginTransaction();
             session.save(user); // gdzie user to instancja nowego usera
             transaction.commit();
-            //System.out.println("User " + userName + " added");
-        }
+        //}
     }
 
     private User getUserFromDatabase(String userName) {
@@ -338,21 +425,16 @@ public class Main {
         return query.uniqueResult();
     }
 
-    private void deleteUser() {
-        Transaction transaction = session.beginTransaction();
-        session.delete(session.get(User.class, 8));
-        transaction.commit();
-    }
 
     // delete user + albums + photos + likes
-    private void deleteUser2() {
+    private void deleteUser(User user) {
 
-        int idToDelete = 8;
+       // int idToDelete = 8;
 
-        String hql = "From User a where a.id=" + idToDelete;
+       // String hql = "From User a where a.id=" + idToDelete;
 
-        Query<User> query = session.createQuery(hql, User.class);
-        User user = query.uniqueResult();
+        //Query<User> query = session.createQuery(hql, User.class);
+        //User user = query.uniqueResult();
         Transaction deleteTransaction = session.beginTransaction();
 
         for (Album album : user.getAlbums()) {
@@ -383,7 +465,17 @@ public class Main {
         }
     }
 
-    private void printUserAlbums(User uesr){
+
+    private void printUserAlbums(User uesr) {
+
+        String hql = "From Album a where a.userId=" + uesr.getId();
+        Query<Album> query = session.createQuery(hql, Album.class);
+        List<Album> albums = query.list();
+
+        System.out.println("### Albums");
+        for (Album album : albums) {
+            System.out.println("Id: " + album.getId() + ", NAME: " + album.getName() + ", OPIS: " + album.getDescription());
+        }
 
     }
 
@@ -401,7 +493,7 @@ public class Main {
 
     private int getAlbumId(int userId, String albumName) {
 
-        try {
+        //try {
             String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + userId;
 
             Query<Album> query = session.createQuery(hql, Album.class);
@@ -415,69 +507,40 @@ public class Main {
             }
 
 
-        } catch (HibernateException e) {
-            e.printStackTrace();
-        }
-        return 0;
+        //} catch (HibernateException e) {
+          //  e.printStackTrace();
+        //}
+       // return 0;
 
     }
 
-    private void createNewAlbum(int userId, String albumName) {
+    private void createNewAlbum(User user, String albumName) {
         Album album = new Album();
         album.setName(albumName);
-        album.setUserId(userId);
+        album.setUserId(user.getId());
         Transaction transaction = session.beginTransaction();
         session.save(album);
         transaction.commit();
     }
 
-    private void addAlbum2(String userName, String albumName) {
-
-        int userId = getUserId(userName);
-
-        if (userId > 0) {
-
-            if (checkIfAlbumNameForUserDoesNotExistsInDatabase(userId, albumName)) {
-                Album album = new Album();
-                album.setName(albumName);
-                album.setUserId(userId);
-
-                Transaction transaction = session.beginTransaction();
-                session.save(album);
-                transaction.commit();
-
-            } else {
-                System.out.println("Album name already exists");
-            }
-
-        } else {
-            System.out.println("User " + userName + " does not exist");
-        }
-
-    }
-
 
     // void change for boolean ? int / better to do -> int 1 for done, 2 for album, 3 user
-    private int addAlbum3(String userName, String albumName) {
-
-        int userId = getUserId(userName);
+    private int getProcessingStatusWhileAddingAlbum(User user, String albumName) {
+        int userId = user.getId();
         int albumId = getAlbumId(userId, albumName);
-
         if (userId > 0) {
-
+            //System.out.println("albumId" + albumId);
             if (albumId == 0) {
-                createNewAlbum(userId, albumName);
+                //createNewAlbum(userId, albumName);
                 return 1;
             } else {
-                System.out.println("[E2] User already has album: " + albumName);
+                // System.out.println("[E2] User already has album: " + albumName);
                 return 2;
             }
-
         } else {
-            System.out.println("[E1] User " + userName + " does not exist");
+            System.out.println("[E1] User " + user.getName() + " does not exist");
             return 3;
         }
-
     }
 
     private void deleteAlbum() {
@@ -490,21 +553,36 @@ public class Main {
     private boolean isAlbumBelongToUser(User user, String albumName) {
         //int userId = user.getId();
         //boolean isAlbumBelongToUser = false;
-        String hql = "From Album a where a.name=" + "'" + albumName + "'" +  "and a.userId=" + user.getId();
+        String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + user.getId();
         Query<Album> query = session.createQuery(hql, Album.class);
         Album album = query.uniqueResult();
         if (album != null) {
-           // if (album.getUserId() == user.getId()) {
+            // if (album.getUserId() == user.getId()) {
+            return true;
+            // }
+        }
+        return false;
+    }
+
+    private boolean isUserLikePhoto(User user, String photoName) {
+
+        String hql = "From User u where u.id= " + user.getId();
+        Query<User> query = session.createQuery(hql, User.class);
+        User user1 = query.uniqueResult();
+
+        for (Photo photo : user1.getPhotos()) {
+
+            if (photo.getName().equals(photoName)) {
                 return true;
-           // }
+            }
         }
         return false;
     }
 
     // delete album + pictures + likes
-    private void deleteAlbum2(User user, String albumName) {
+    private void deleteAlbum(User user, String albumName) {
 
-        String hql = "From Album a where a.name=" + "'" + albumName+ "'" + " and a.userId=" + user.getId();
+        String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + user.getId();
 
         Query<Album> query = session.createQuery(hql, Album.class);
         Album album = query.uniqueResult();
@@ -521,39 +599,98 @@ public class Main {
 
     //---------------------------------------  Photo
 
-    private void addPhoto(String photoName, String albumName) {
-        int albumId = Integer.parseInt(albumName);
+    private boolean isPictureBelongToUser(User user, String albumName, String photoName) {
+
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + user.getId();
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        Album album = query1.uniqueResult();
+
+        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        Query<Photo> query = session.createQuery(hql2, Photo.class);
+        Photo photo = query.uniqueResult();
+
+        if (album != null && photo != null) {
+            // if (album.getUserId() == user.getId()) {
+            return true;
+            // }
+        }
+        return false;
+    }
+
+    private int getProcessingStatusWhileAddingPhoto(User user, String albumName, String photoName) {
+
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + user.getId();
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        Album album = query1.uniqueResult();
+
+        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        Query<Photo> query = session.createQuery(hql2, Photo.class);
+        Photo photo = query.uniqueResult();
+
+        if (album != null) {
+            if (photo == null) {
+                System.out.println("photot = " + 1);
+            return 1; // can add picture / picture does not exist
+            }
+            else{
+                System.out.println("photot = " + 2);
+                return 2; // picture with that name exists
+            }
+        } else {
+            return 3; // album does not exist
+        }
+
+    }
+
+
+
+    private void addPhoto(String photoName, String albumName, User user) {
+        String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + user.getId();
+        Query<Album> query = session.createQuery(hql, Album.class);
+        Album album = query.uniqueResult();
+
         Photo photo = new Photo();
         photo.setName(photoName);
-        photo.setAlbumId(albumId);
+        photo.setAlbumId(album.getId());
         Transaction transaction = session.beginTransaction();
         session.save(photo);
         transaction.commit();
     }
 
-    private void deletePhoto() {
-        int idToDelete = 26;
-        String hql = "From Photo a where a.id=" + idToDelete;
-        Query<Photo> query = session.createQuery(hql, Photo.class);
+    private void deletePhoto(String photoName, String albumName, User user) {
+
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + user.getId();
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        Album album = query1.uniqueResult();
+
+        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        Query<Photo> query = session.createQuery(hql2, Photo.class);
         Photo photo = query.uniqueResult();
-        Transaction deleteTransaction = session.beginTransaction();
-        session.delete(photo);
-        deleteTransaction.commit();
+
+        if (album != null && photo != null) {
+            Transaction deleteTransaction = session.beginTransaction();
+            session.delete(photo);
+            deleteTransaction.commit();
+        }
+        else{
+            System.out.println("Album does not exist or photo does not exist");
+        }
+
     }
 
     //---------------------------------------  Photo Likes
 
-    private void addPhotoLlike(String photoName) {
+    private void addPhotoLlike1(User user, String photoName) {
         int albumId = 13;
         String hql = "From Photo p where p.name=" + "'Z 1'" + " and p.albumId=" + albumId;
         Query<Photo> query = session.createQuery(hql, Photo.class);
         Photo photo = query.uniqueResult();
 
 
-        int userId = 8;
-        String hql2 = "From User a where a.id=" + userId;
+        /*int userId = 8;
+        String hql2 = "From User a where a.id=" + user.getId();
         Query<User> query2 = session.createQuery(hql2, User.class);
-        User user = query2.uniqueResult();
+        User user1 = query2.uniqueResult();*/
 
         // from user side
         user.addPhoto(photo);
@@ -562,6 +699,63 @@ public class Main {
         //photo.addUser(user);
 
         Transaction transaction = session.beginTransaction();
+
+        transaction.commit();
+
+
+    }
+
+    private int getProcessingStatusForPhotoLike(User user, String albumName, String photoName) {
+
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + user.getId();
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        Album album = query1.uniqueResult();
+
+        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        Query<Photo> query2 = session.createQuery(hql2, Photo.class);
+        Photo photo = query2.uniqueResult();
+
+        if (album != null) {
+            if (photo != null) {
+
+                //Set<User> users = photo.getUsers();
+                if(photo.getUsers().contains(user)) {
+                    //System.out.println("like = " + 1);
+                    return 1; //  like
+                }
+                else{
+                   // System.out.println("like = " + 4);
+                    return 4; // no like
+                }
+
+
+            }
+            else{
+               // System.out.println("like = " + 2);
+                return 2; // photo does not exist
+            }
+        } else {
+            return 3; // album does not exist
+        }
+
+    }
+
+    private void addPhotoLlike(User user, String albumName, String photoName) {
+
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        Album album = query1.uniqueResult();
+
+        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        Query<Photo> query = session.createQuery(hql2, Photo.class);
+        Photo photo = query.uniqueResult();
+
+        Transaction transaction = session.beginTransaction();
+        // from user side
+        //user.addPhoto(photo);
+
+        // from photo side
+        photo.addUser(user);
 
         transaction.commit();
 
@@ -592,7 +786,7 @@ public class Main {
 
     }
 
-    private void addPhotoLlike3(String photoName) {
+   private void addPhotoLlike3(String photoName) {
         int albumId = 10;
         String hql = "From Photo p where p.name=" + "'lodowisko'" + " and p.albumId=" + albumId;
         Query<Photo> query = session.createQuery(hql, Photo.class);
@@ -640,8 +834,24 @@ public class Main {
         transaction.commit();
     }
 
-    private void deletePhotoLlike() {
-        int photoId = 25;
+    private void deletePhotoLlike(User user, String albumName, String photoName) {
+
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        Album album = query1.uniqueResult();
+
+        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        Query<Photo> query = session.createQuery(hql2, Photo.class);
+        Photo photo = query.uniqueResult();
+
+        Transaction deleteTransaction = session.beginTransaction();
+        //session.delete(photo);
+        photo.removeUser(user);
+        deleteTransaction.commit();
+
+
+
+        /* int photoId = 25;
         String hql = "From Photo p where p.id=" + photoId;
         Query<Photo> query = session.createQuery(hql, Photo.class);
         Photo photo = query.uniqueResult();
@@ -654,7 +864,7 @@ public class Main {
         Transaction deleteTransaction = session.beginTransaction();
         //session.delete(photo);
         photo.removeUser(user);
-        deleteTransaction.commit();
+        deleteTransaction.commit();*/
 
     }
 }
