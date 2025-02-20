@@ -69,7 +69,7 @@ public class Album {
 
     @Override
     public String toString() {
-        return "Album name : " + this.name + ", description : " + this.description;
+        return "Album name: " + this.name + "  |||  description: " + this.description;
     }
 
 }

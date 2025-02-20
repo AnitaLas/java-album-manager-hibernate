@@ -1,6 +1,7 @@
 package pl.edu.agh.mwo.hibernate;
 
 import javax.persistence.*;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -15,7 +16,7 @@ public class Photo {
     @Column
     private String name;
     @Column
-    private Date date;
+    private String date; // Date date -> sql -> 1740006000000
     @Column
     private int albumId;
 
@@ -42,11 +43,11 @@ public class Photo {
         this.name = name;
     }
 
-    public Date getDate() {
+    public String getDate() {
         return this.date;
     }
 
-    public void setDate(Date date) {
+    public void setDate(String date) {
         this.date = date;
     }
 
@@ -67,6 +68,11 @@ public class Photo {
     }
     public void removeUser(User user) {
         this.users.remove(user);
+    }
+
+    @Override
+    public String toString() {
+        return "Photo name: " + this.name;
     }
 
 }

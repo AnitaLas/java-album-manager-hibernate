@@ -17,15 +17,22 @@ public class User {
 
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "UserId")
-    private Set<Album> users = new HashSet<>();
+    private Set<Album> albums = new HashSet<>();
 
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "PhotoLikes",
             joinColumns = @JoinColumn(name = "UserId"),
             inverseJoinColumns = @JoinColumn(name = "PhotoId"))
-
     private Set<Photo> photos = new HashSet<>();
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "Friends",
+            joinColumns = @JoinColumn(name = "InvitationSentByUserId"),
+            inverseJoinColumns = @JoinColumn(name = "InvitationAcceeptedByUserId"))
+    private Set<User> users = new HashSet<>();
+
 
     public int getId() {
         return this.id;
@@ -44,15 +51,15 @@ public class User {
     }
 
     public void addAlbum(Album album) {
-        this.users.add(album);
+        this.albums.add(album);
     }
 
     public void removeAlbum(Album album) {
-        this.users.remove(album);
+        this.albums.remove(album);
     }
 
     public Set<Album> getAlbums() {
-        return this.users;
+        return this.albums;
     }
 
     public void addPhoto(Photo photo) {
@@ -65,12 +72,18 @@ public class User {
         return this.photos;
     }
 
-
-
-    @Override
-    public String toString() {
-        return "User name=" + name + ", " + id;
+    public void addUser(User user) {
+        this.users.add(user);
     }
+
+    public void removeUser(User user) {
+        this.users.remove(user);
+    }
+
+    public Set<User> getUsers() {
+        return this.users;
+    }
+
 
 
 
