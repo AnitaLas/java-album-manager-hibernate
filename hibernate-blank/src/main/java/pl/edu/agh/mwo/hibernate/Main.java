@@ -108,21 +108,22 @@ public class Main {
                     System.out.println(
                             //"select option: \n" +
                             "1-addAlbum, " +
-                            "2-deleteAlbum, \n" +
-                            "3-showMyAlbums, " +
-                            //"4 - showAllUsersAlbums, " +
-                            "5-showUserAlbums, " +
-                            //"6 - showMyPhotos, " +
-                            "7 - showPhotoInMyAlbum, \n" +
-                            //"8 - showPhotoInUserAlbum, \n" +
-                            "9-addPhoto, " +
-                            "10-deletePhoto, \n" +
-                            "11-likePhoto, " +
-                            "12-noLikePhoto, \n" +
-                            "20-addFriend, " +
-                            "21-deleteFriend, \n" +
-                            "999-logout, " +
-                            "666-removeYourselfFromDatabase, ");
+                                    "2-deleteAlbum, \n" +
+                                    "3-showMyAlbums, " +
+                                    //"4 - showAllUsersAlbums, " +
+                                    "5-showUserAlbums, " +
+                                    //"6 - showMyPhotos, " +
+                                    "7 - showPhotoInMyAlbum, \n" +
+                                    //"8 - showPhotoInUserAlbum, \n" +
+                                    "9-addPhoto, " +
+                                    "10-deletePhoto, \n" +
+                                    "11-likePhoto, " +
+                                    "12-noLikePhoto, \n" +
+                                    "20-addFriend, " +
+                                    "21-deleteFriend, " +
+                                    "23-showMyFriends, \n" +
+                                    "999-logout, " +
+                                    "666-removeYourselfFromDatabase, ");
 
                     input = br.readLine();
 
@@ -358,6 +359,10 @@ public class Main {
                             System.out.println("User " + friendName + " does not exist.");
                         }
                     }
+                    // showMyFriends
+                    else if (input.equals("23")) {
+                        main.printMyFriends(userLogged);
+                    }
 
 
                 } while (!input.equals("exit2"));
@@ -383,10 +388,67 @@ public class Main {
         HibernateUtil.shutdown();
     }
 
+    // --------- database
+
+    private User getUserFromDatabase(String userName) {
+        String hql = "From User u where u.name=" + "'" + userName + "'";
+        Query<User> query = session.createQuery(hql, User.class);
+        //User user = query.uniqueResult();
+        return query.uniqueResult();
+    }
+
+    private User getUserFromDatabase(int userId) {
+        // String hql3 = "From User a  where a.id=" + album.getUserId();
+        String hql3 = "From User a  where a.id=" + userId;
+        Query<User> query3 = session.createQuery(hql3, User.class);
+        //User user1 = query3.uniqueResult();
+        return query3.uniqueResult();
+    }
+
+    private List<User> getUsersFromDatabase() {
+        Query<User> query = session.createQuery("from User", User.class);
+        //List<User> users = query.list();
+        return query.list();
+    }
+
+    private Album getAlbumFromDatabase(String albumName){
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        //Album album = query1.uniqueResult();
+        return query1.uniqueResult();
+    }
+
+    private Album getAlbumFromDatabase(String albumName, int userId){
+        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" +userId;
+        Query<Album> query1 = session.createQuery(hql1, Album.class);
+        //Album album = query1.uniqueResult();
+        return query1.uniqueResult();
+    }
+
+    // to remove >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to do
+    private int getAlbumId(int userId, String albumName) {
+        String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + userId;
+        Query<Album> query = session.createQuery(hql, Album.class);
+        Album album = query.uniqueResult();
+        if (album != null) {
+            return album.getId();
+        } else {
+            return 0;
+        }
+    }
+
+    private Photo getPhotoFromDatabase(String photoName, int albumId){
+        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + albumId;
+        Query<Photo> query = session.createQuery(hql2, Photo.class);
+        //Photo photo = query.uniqueResult();
+        return query.uniqueResult();
+    }
+
     //---------------------------------------  Users
     private void printUsers() {
-        Query<User> query = session.createQuery("from User", User.class);
-        List<User> users = query.list();
+        /*Query<User> query = session.createQuery("from User", User.class);
+        List<User> users = query.list();*/
+        List<User> users = getUsersFromDatabase();
 
         System.out.println("### Users");
         for (User user : users) {
@@ -395,9 +457,11 @@ public class Main {
     }
 
     private boolean isUserExistsInDatabase(String userName) {
-        String hql = "From User u where u.name=" + "'" + userName + "'";
+        /*String hql = "From User u where u.name=" + "'" + userName + "'";
         Query<User> query = session.createQuery(hql, User.class);
-        User user = query.uniqueResult();
+        User user = query.uniqueResult();*/
+
+        User user = getUserFromDatabase(userName);
 
         if (user != null)
             return true;
@@ -419,39 +483,35 @@ public class Main {
         //}
     }
 
-    private User getUserFromDatabase(String userName) {
-        String hql = "From User u where u.name=" + "'" + userName + "'";
-        Query<User> query = session.createQuery(hql, User.class);
-        //User user = query.uniqueResult();
-        return query.uniqueResult();
-    }
-
 
     // delete user + albums + photos + likes
     private void deleteUser(User userLogged) {
 
-        // int idToDelete = 8;
+        /*int idToDelete = 8;
+        String hql = "From User a where a.id=" + idToDelete;
+        Query<User> query = session.createQuery(hql, User.class);
+        User user = query.uniqueResult();*/
 
-        // String hql = "From User a where a.id=" + idToDelete;
-
-        //Query<User> query = session.createQuery(hql, User.class);
-        //User user = query.uniqueResult();
         Transaction deleteTransaction = session.beginTransaction();
         for (Album album : userLogged.getAlbums()) {
             for (Photo photo : album.getPhotos()) {
-                //photo.removeUser(user); // ?? ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to do
-                //user.removePhoto(photo);
+                //photo.removeUser(user); // ?? ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to do
+                //user.removePhoto(photo); // ?? ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to do
                 session.delete(photo);
             }
             session.delete(album);
         }
 
-        // delete column 2 -> InvitationAcceeptedByUserId
-        String hql = "From User";
-        Query<User> query = session.createQuery(hql, User.class);
-        List<User> users = query.list();
-        for (User user : users) { // friend.getUsers())
-            for(User userFriends : user.getUsers()){
+        // delete column 2 -> InvitationAcceptedByUserId
+        /*String hql = "From User";
+        Query<User> query = session.createQuery(hql, User.class);*/
+
+        /*Query<User> query = session.createQuery("from User", User.class);
+        List<User> users = query.list();*/
+        List<User> users = getUsersFromDatabase();
+
+        for (User user : users) {
+            for (User userFriends : user.getUsers()) {
                 if (userFriends.equals(userLogged)) {
                     System.out.println("1 = " + user.getName());
                     user.removeUser(userLogged);
@@ -502,7 +562,7 @@ public class Main {
 
     }
 
-    private boolean checkIfAlbumNameForUserDoesNotExistsInDatabase(int userId, String albumName) {
+    /*private boolean checkIfAlbumNameForUserDoesNotExistsInDatabase(int userId, String albumName) {
         String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + userId;
 
         Query<Album> query = session.createQuery(hql, Album.class);
@@ -512,18 +572,9 @@ public class Main {
             return true;
 
         return false;
-    }
+    }*/
 
-    private int getAlbumId(int userId, String albumName) {
-        String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + userId;
-        Query<Album> query = session.createQuery(hql, Album.class);
-        Album album = query.uniqueResult();
-        if (album != null) {
-            return album.getId();
-        } else {
-            return 0;
-        }
-    }
+
 
     private void createNewAlbum(User user, String albumName) {
         Album album = new Album();
@@ -534,43 +585,46 @@ public class Main {
         transaction.commit();
     }
 
-
-    // void change for boolean ? int / better to do -> int 1 for done, 2 for album, 3 user
     private int getProcessingStatusWhileAddingAlbum(User userLogged, String albumName) {
         int userId = userLogged.getId();
         int albumId = getAlbumId(userId, albumName);
         if (userId > 0) {
-            if (albumId == 0) {;
-                return 1;
+            if (albumId == 0) {
+                ;
+                return 1; // user does not have album with that name
             } else {
-                // System.out.println("[E2] User already has album: " + albumName);
-                return 2;
+                return 2; // user already has album with that name
             }
         } else {
             System.out.println("[E1] User " + userLogged.getName() + " does not exist");
-            return 3;
+            return 3; // user does not exist
         }
     }
 
-    private void deleteAlbum() {
+    /*private void deleteAlbum() {
         Transaction transaction = session.beginTransaction();
         session.delete(session.get(Album.class, 13));
         transaction.commit();
-    }
+    }*/
 
     private boolean isAlbumBelongToUser(User userLogged, String albumName) {
-        String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
+        /*String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
         Query<Album> query = session.createQuery(hql, Album.class);
-        Album album = query.uniqueResult();
+        Album album = query.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
         if (album != null)
             return true;
         return false;
     }
 
     private boolean isUserLikePhoto(User userLogged, String photoName) {
-        String hql = "From User u where u.id= " + userLogged.getId();
+        /*String hql = "From User u where u.id= " + userLogged.getId();
         Query<User> query = session.createQuery(hql, User.class);
-        User user1 = query.uniqueResult();
+        User user1 = query.uniqueResult();*/
+
+        User user1 = getUserFromDatabase(userLogged.getId());
+
+
         for (Photo photo : user1.getPhotos()) {
             if (photo.getName().equals(photoName))
                 return true;
@@ -581,10 +635,11 @@ public class Main {
     // delete album + pictures + likes
     private void deleteAlbum(User userLogged, String albumName) {
 
-        String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + userLogged.getId();
-
+        /*String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + userLogged.getId();
         Query<Album> query = session.createQuery(hql, Album.class);
-        Album album = query.uniqueResult();
+        Album album = query.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
+
         Transaction deleteTransaction = session.beginTransaction();
 
         for (Photo photo : album.getPhotos()) {
@@ -599,13 +654,15 @@ public class Main {
 
     private boolean isPictureBelongToUser(User userLogged, String albumName, String photoName) {
 
-        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
+        /*String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
         Query<Album> query1 = session.createQuery(hql1, Album.class);
-        Album album = query1.uniqueResult();
+        Album album = query1.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
 
-        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        /*String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
         Query<Photo> query = session.createQuery(hql2, Photo.class);
-        Photo photo = query.uniqueResult();
+        Photo photo = query.uniqueResult();*/
+        Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
         if (album != null && photo != null) {
             return true;
@@ -615,13 +672,15 @@ public class Main {
 
     private int getProcessingStatusWhileAddingPhoto(User userLogged, String albumName, String photoName) {
 
-        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
+        /*String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
         Query<Album> query1 = session.createQuery(hql1, Album.class);
-        Album album = query1.uniqueResult();
+        Album album = query1.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
 
-        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        /*String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
         Query<Photo> query = session.createQuery(hql2, Photo.class);
-        Photo photo = query.uniqueResult();
+        Photo photo = query.uniqueResult();*/
+        Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
         if (album != null) {
             if (photo == null) {
@@ -635,9 +694,10 @@ public class Main {
     }
 
     private void addPhoto(String photoName, String albumName, User userLogged) {
-        String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
+        /*String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
         Query<Album> query = session.createQuery(hql, Album.class);
-        Album album = query.uniqueResult();
+        Album album = query.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
 
         Photo photo = new Photo();
         photo.setName(photoName);
@@ -651,13 +711,15 @@ public class Main {
 
     private void deletePhoto(String photoName, String albumName, User userLogged) {
 
-        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
+        /*String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
         Query<Album> query1 = session.createQuery(hql1, Album.class);
-        Album album = query1.uniqueResult();
+        Album album = query1.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
 
-        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        /*String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
         Query<Photo> query = session.createQuery(hql2, Photo.class);
-        Photo photo = query.uniqueResult();
+        Photo photo = query.uniqueResult();*/
+        Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
         if (album != null && photo != null) {
             Transaction deleteTransaction = session.beginTransaction();
@@ -669,17 +731,20 @@ public class Main {
     }
 
     private void printPhoto(User userLogged, String albumName) {
-        String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
+       /* String hql = "From Album a where a.name=" + "'" + albumName + "'" + "and a.userId=" + userLogged.getId();
         Query<Album> query = session.createQuery(hql, Album.class);
-        Album album = query.uniqueResult();
+        Album album = query.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
 
-        for(Photo photo : album.getPhotos()) {
+        for (Photo photo : album.getPhotos()) {
             System.out.println(photo);
-            System.out.print(" , likes: "+countedPhotoLikes(photo));
+            System.out.print(" , likes: " + countedPhotoLikes(photo));
         }
     }
 
-    private void printPhoto(User userLogged, String albumName, String photoName) {}
+    private void printPhoto(User userLogged, String albumName, String photoName) {
+        System.out.println("printPhoto() -> real photo");
+    }
 
     //---------------------------------------  Photo Likes
 
@@ -708,23 +773,27 @@ public class Main {
 
     }
 
-    // to do - when album name is wrong
+    // to do - when album name is wrong ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     private int getProcessingStatusForPhotoLike(User userLogged, String albumName, String photoName) {
-        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
+        /*String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
         Query<Album> query1 = session.createQuery(hql1, Album.class);
-        Album album = query1.uniqueResult();
+        Album album = query1.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName);
 
         if (album != null) {
 
-            String hql3 = "From User a  where a.id=" + album.getUserId();
+            /*String hql3 = "From User a  where a.id=" + album.getUserId();
             Query<User> query3 = session.createQuery(hql3, User.class);
-            User user1 = query3.uniqueResult();
+            User user1 = query3.uniqueResult();*/
+
+            User user1 = getUserFromDatabase(album.getUserId());
 
             if (areWeFriends(userLogged, user1.getName()) || userLogged.equals(user1)) {
 
-                String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+                /*String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
                 Query<Photo> query2 = session.createQuery(hql2, Photo.class);
-                Photo photo = query2.uniqueResult();
+                Photo photo = query2.uniqueResult();*/
+                Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
                 if (photo != null) {
                     if (photo.getUsers().contains(userLogged)) {
@@ -745,13 +814,16 @@ public class Main {
 
     private void addPhotoLike(User userLogged, String albumName, String photoName) {
 
-        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
+       /* String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
         Query<Album> query1 = session.createQuery(hql1, Album.class);
-        Album album = query1.uniqueResult();
+        Album album = query1.uniqueResult();*/
 
-        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        Album album = getAlbumFromDatabase(albumName);
+
+        /*String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
         Query<Photo> query = session.createQuery(hql2, Photo.class);
-        Photo photo = query.uniqueResult();
+        Photo photo = query.uniqueResult();*/
+        Photo photo = getPhotoFromDatabase(photoName, album.getId());
         photo.addUser(userLogged);
 
         Transaction transaction = session.beginTransaction();
@@ -764,87 +836,17 @@ public class Main {
         transaction.commit();
     }
 
-    private void addPhotoLlike2(String photoName) {
-        int albumId = 13;
-        String hql = "From Photo p where p.name=" + "'Z 1'" + " and p.albumId=" + albumId;
-        Query<Photo> query = session.createQuery(hql, Photo.class);
-        Photo photo = query.uniqueResult();
-
-
-        int userId = 4;
-        String hql2 = "From User a where a.id=" + userId;
-        Query<User> query2 = session.createQuery(hql2, User.class);
-        User user = query2.uniqueResult();
-
-        // from user side
-        user.addPhoto(photo);
-
-        // from photo side
-        //photo.addUser(user);
-
-        Transaction transaction = session.beginTransaction();
-
-        transaction.commit();
-
-    }
-
-    private void addPhotoLlike3(String photoName) {
-        int albumId = 10;
-        String hql = "From Photo p where p.name=" + "'lodowisko'" + " and p.albumId=" + albumId;
-        Query<Photo> query = session.createQuery(hql, Photo.class);
-        Photo photo = query.uniqueResult();
-
-
-        int userId = 5;
-        String hql2 = "From User a where a.id=" + userId;
-        Query<User> query2 = session.createQuery(hql2, User.class);
-        User user = query2.uniqueResult();
-
-        // from user side
-        user.addPhoto(photo);
-
-        // from photo side
-        //photo.addUser(user);
-
-        Transaction transaction = session.beginTransaction();
-
-        transaction.commit();
-
-
-    }
-
-    private void addPhotoLlike4(String photoName) {
-        int albumId = 10;
-        String hql = "From Photo p where p.name=" + "'lodowisko'" + " and p.albumId=" + albumId;
-        Query<Photo> query = session.createQuery(hql, Photo.class);
-        Photo photo = query.uniqueResult();
-
-
-        int userId = 8;
-        String hql2 = "From User a where a.id=" + userId;
-        Query<User> query2 = session.createQuery(hql2, User.class);
-        User user = query2.uniqueResult();
-
-        // from user side
-        user.addPhoto(photo);
-
-        // from photo side
-        //photo.addUser(user);
-
-        Transaction transaction = session.beginTransaction();
-
-        transaction.commit();
-    }
-
     private void deletePhotoLlike(User userLogged, String albumName, String photoName) {
 
-        String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
+        /*String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
         Query<Album> query1 = session.createQuery(hql1, Album.class);
-        Album album = query1.uniqueResult();
+        Album album = query1.uniqueResult();*/
+        Album album = getAlbumFromDatabase(albumName);
 
-        String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
+        /*String hql2 = "From Photo p where p.name=" + "'" + photoName + "'" + "and p.albumId=" + album.getId();
         Query<Photo> query = session.createQuery(hql2, Photo.class);
-        Photo photo = query.uniqueResult();
+        Photo photo = query.uniqueResult();*/
+        Photo photo = getPhotoFromDatabase(photoName, album.getId());
         //photo.removeUser(userLogged); // ??
 
         Transaction deleteTransaction = session.beginTransaction();
@@ -878,7 +880,7 @@ public class Main {
                 areWeFriends = true;
         }
 
-        if(userLogged.equals(friend))
+        if (userLogged.equals(friend))
             areWeFriends = true; // it is good to be your own friend, but not in this case xD
 
         return areWeFriends;
@@ -886,44 +888,69 @@ public class Main {
 
     private void addFriend(User user, String friendName) {
 
-        String hql = "From User u where u.name=" + "'" + friendName + "'";
+        /*String hql = "From User u where u.name=" + "'" + friendName + "'";
         Query<User> query = session.createQuery(hql, User.class);
-        User friend = query.uniqueResult();
+        User friend = query.uniqueResult();*/
+
+        User friend = getUserFromDatabase(friendName);
 
         Transaction insertTransaction = session.beginTransaction();
         user.addUser(friend);
         //friend.addUser(user); // double entry
         insertTransaction.commit();
-
     }
 
     private void deleteFriend(User userLogged, String friendName) {
 
-        String hql = "From User u where u.name=" + "'" + friendName + "'";
+        /*String hql = "From User u where u.name=" + "'" + friendName + "'";
         Query<User> query = session.createQuery(hql, User.class);
-        User friend = query.uniqueResult();
+        User friend = query.uniqueResult();*/
 
+        User friend = getUserFromDatabase(friendName);
         Transaction deleteTransaction = session.beginTransaction();
 
         for (User u : friend.getUsers()) {
-            if (userLogged.equals(u)) {
-               friend.removeUser(userLogged); // no delete estera, delete filipa !!!
-                //userLogged.removeUser(friend); // no delete estera, no delete filip
-            }
+            if (userLogged.equals(u))
+                friend.removeUser(userLogged);
         }
 
         for (User u : userLogged.getUsers()) {
-            if (friend.equals(u)) {
-                //friend.removeUser(userLogged); // no delete estera, no delete filip
-              userLogged.removeUser(friend); // delete estera !!!, no delete filipa
-
-            }
+            if (friend.equals(u))
+                userLogged.removeUser(friend);
         }
 
         session.save(friend);
         session.save(userLogged);
         deleteTransaction.commit();
     }
+
+    private void printMyFriends(User userLogged) {
+        /*String hql = "From User";
+        Query<User> query = session.createQuery(hql, User.class);
+        List<User> users = query.list();*/
+        List<User> users = getUsersFromDatabase();
+
+        System.out.println("### Friends ");
+        int count = 0;
+        // column 2 -> InvitationAcceptedByUserId
+        for (User user : users) {
+            for (User userFriends : user.getUsers()) {
+                if (userFriends.equals(userLogged)) {
+                    System.out.println(user);
+                    count += 1;
+                }
+            }
+        }
+        //  column 1 -> InvitationSentByUserId
+        for (User friend : userLogged.getUsers()) {
+            System.out.println(friend);
+            count += 1;
+        }
+
+        if (count == 0)
+            System.out.println("No friends.");
+    }
+
 
     //---------------------------------------  Date
 

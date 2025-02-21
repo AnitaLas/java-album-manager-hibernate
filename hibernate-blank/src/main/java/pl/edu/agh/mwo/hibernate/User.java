@@ -30,7 +30,7 @@ public class User {
     @JoinTable(
             name = "Friends",
             joinColumns = @JoinColumn(name = "InvitationSentByUserId"),
-            inverseJoinColumns = @JoinColumn(name = "InvitationAcceeptedByUserId"))
+            inverseJoinColumns = @JoinColumn(name = "InvitationAcceptedByUserId"))
     private Set<User> users = new HashSet<>();
 
 
@@ -83,6 +83,11 @@ public class User {
 
     public Set<User> getUsers() {
         return this.users;
+    }
+
+    @Override
+    public String toString() {
+        return "user name: " + this.name;
     }
 
 
