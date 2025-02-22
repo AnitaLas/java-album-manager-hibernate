@@ -1,4 +1,4 @@
-package pl.edu.agh.mwo.hibernate;
+package pl.edu.agh.mwo.hibernate.FileAlbumManagerVo1;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -33,7 +33,6 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "InvitationAcceptedByUserId"))
     private Set<User> users = new HashSet<>();
 
-
     public int getId() {
         return this.id;
     }
@@ -65,9 +64,11 @@ public class User {
     public void addPhoto(Photo photo) {
         this.photos.add(photo);
     }
+
     public void removePhoto(Photo photo) {
         this.photos.remove(photo);
     }
+
     public Set<Photo> getPhotos() {
         return this.photos;
     }
@@ -89,8 +90,5 @@ public class User {
     public String toString() {
         return "user name: " + this.name;
     }
-
-
-
 
 }

@@ -1,4 +1,4 @@
-package pl.edu.agh.mwo.hibernate;
+package pl.edu.agh.mwo.hibernate.FileAlbumManagerVo1;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;

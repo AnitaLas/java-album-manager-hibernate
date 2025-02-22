@@ -1,8 +1,6 @@
-package pl.edu.agh.mwo.hibernate;
+package pl.edu.agh.mwo.hibernate.FileAlbumManagerVo1;
 
 import javax.persistence.*;
-import java.time.LocalDate;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -66,6 +64,7 @@ public class Photo {
     public void addUser(User user) {
         this.users.add(user);
     }
+
     public void removeUser(User user) {
         this.users.remove(user);
     }

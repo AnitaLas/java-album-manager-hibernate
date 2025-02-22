@@ -1,4 +1,4 @@
-package pl.edu.agh.mwo.hibernate;
+package pl.edu.agh.mwo.hibernate.FileAlbumManagerVo1;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -21,7 +21,6 @@ public class Album {
     @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "AlbumId")
     private Set<Photo> photos = new HashSet<>();
-
 
     public int getId() {
         return this.id;
@@ -58,14 +57,14 @@ public class Album {
     public Set<Photo> getPhotos() {
         return this.photos;
     }
+
     public void removePhoto(Photo photo) {
         this.photos.remove(photo);
     }
+
     public void addPhoto(Photo photo) {
         this.photos.add(photo);
     }
-
-
 
     @Override
     public String toString() {
