@@ -367,7 +367,6 @@ public class Main {
     }
 
     // --------- database
-
     private User getUserFromDatabase(String userName) {
         String hql = "From User u where u.name=" + "'" + userName + "'";
         Query<User> query = session.createQuery(hql, User.class);
@@ -387,26 +386,20 @@ public class Main {
 
     private Album getAlbumFromDatabase(String albumName) {
         String hql1 = "From Album a  where a.name=" + "'" + albumName + "'";
-        Query<Album> query1 = session.createQuery(hql1, Album.class);
-        return query1.uniqueResult();
+        Query<Album> query = session.createQuery(hql1, Album.class);
+        return query.uniqueResult();
     }
 
     private Album getAlbumFromDatabase(String albumName, int userId) {
         String hql1 = "From Album a  where a.name=" + "'" + albumName + "'" + "and a.userId=" + userId;
-        Query<Album> query1 = session.createQuery(hql1, Album.class);
-        return query1.uniqueResult();
+        Query<Album> query = session.createQuery(hql1, Album.class);
+        return query.uniqueResult();
     }
 
-    // to remove >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to do
-    private int getAlbumId(int userId, String albumName) {
-        String hql = "From Album a where a.name=" + "'" + albumName + "'" + " and a.userId=" + userId;
-        Query<Album> query = session.createQuery(hql, Album.class);
-        Album album = query.uniqueResult();
-        if (album != null) {
-            return album.getId();
-        } else {
-            return 0;
-        }
+    private List<Album> getAlbumsFromDatabase(int userId) {
+        String hql1 = "From Album a  where a.userId=" + userId;
+        Query<Album> query = session.createQuery(hql1, Album.class);
+        return query.list();
     }
 
     private Photo getPhotoFromDatabase(String photoName, int albumId) {
@@ -414,6 +407,13 @@ public class Main {
         Query<Photo> query = session.createQuery(hql2, Photo.class);
         return query.uniqueResult();
     }
+
+    private List<Photo> getPhotosFromDatabase(int albumId) {
+        String hql2 = "From Photo p where p.albumId=" + albumId;
+        Query<Photo> query = session.createQuery(hql2, Photo.class);
+        return query.list();
+    }
+
 
     //---------------------------------------  Users
     private void printUsers() {
@@ -429,7 +429,6 @@ public class Main {
         User user = getUserFromDatabase(userName);
         if (user != null)
             return true;
-
         return false;
     }
 
@@ -442,12 +441,16 @@ public class Main {
         transaction.commit();
     }
 
-    // delete user + albums + photos + likes
     private void deleteUser(User userLogged) {
-
         Transaction deleteTransaction = session.beginTransaction();
-        for (Album album : userLogged.getAlbums()) {
-            for (Photo photo : album.getPhotos()) {
+        // System.out.println("album nr " + userLogged.getAlbums().size());
+
+        List<Album> albums = getAlbumsFromDatabase(userLogged.getId());
+        System.out.println("album nr " + albums.size());
+        for (Album album : albums) {
+
+            List<Photo> photos = getPhotosFromDatabase(album.getId());
+            for (Photo photo : photos) {
                 deletePhotoLikesBothWays(userLogged, photo);
                 session.delete(photo);
             }
@@ -468,13 +471,13 @@ public class Main {
         for (User friend : userLogged.getUsers()) {
             System.out.println("2 = " + friend.getName());
             friend.removeUser(userLogged);
+            session.save(friend); // added - to remove
         }
         session.save(userLogged);
 
         session.delete(userLogged);
         deleteTransaction.commit();
     }
-
 
     //---------------------------------------  Albums
     private void printAlbums() {
@@ -505,10 +508,8 @@ public class Main {
     }
 
     private int getProcessingStatusWhileAddingAlbum(User userLogged, String albumName) {
-        int userId = userLogged.getId();
-        int albumId = getAlbumId(userId, albumName);
-        if (userId > 0) {
-            if (albumId == 0) {
+        if (userLogged.getId() > 0) {
+            if (getAlbumFromDatabase(albumName, userLogged.getId()) == null) {
                 return 1; // user does not have album with that name
             } else {
                 return 2; // user already has album with that name
@@ -520,67 +521,48 @@ public class Main {
     }
 
     private boolean isAlbumBelongToUser(User userLogged, String albumName) {
-        Album album = getAlbumFromDatabase(albumName, userLogged.getId());
-        if (album != null)
+        if (getAlbumFromDatabase(albumName, userLogged.getId()) != null)
             return true;
         return false;
     }
 
     private boolean isUserLikePhoto(User userLogged, String photoName) {
         User user1 = getUserFromDatabase(userLogged.getId());
-
-        for (Photo photo : user1.getPhotos()) {
-            if (photo.getName().equals(photoName))
-                return true;
+        if (user1 != null) {
+            for (Photo photo : user1.getPhotos()) {
+                if (photo.getName().equals(photoName))
+                    return true;
+            }
+        } else {
+            System.out.println("[E2] User " + userLogged.getName() + " does not exist");
         }
         return false;
     }
 
-    // delete album + pictures + likes
     private void deleteAlbum(User userLogged, String albumName) {
         Album album = getAlbumFromDatabase(albumName, userLogged.getId());
-        Transaction deleteTransaction = session.beginTransaction();
 
-        for (Photo photo : album.getPhotos()) {
+        if (album != null) {
+            Transaction deleteTransaction = session.beginTransaction();
+            List<Photo> photos = getPhotosFromDatabase(album.getId());
 
-            deletePhotoLikesBothWays(userLogged, photo);
-            session.delete(photo);
-        }
+            for (Photo photo : photos) {
+                deletePhotoLikesBothWays(userLogged, photo);
+                album.removePhoto(photo);
+                session.save(album);
+                session.delete(photo);
+            }
 
-        session.delete(session.get(Album.class, album.getId()));
-        deleteTransaction.commit();
-    }
-
-    private void insertPhotoLikesBothWays(User userLogged, Photo photo) {
-        if(!photo.getUsers().contains(userLogged)) {
-            photo.addUser(userLogged);
-             session.save(photo);
-        }
-        else if (!userLogged.getPhotos().contains(photo)) {
-            userLogged.addPhoto(photo);
-            session.save(userLogged);
-        }
-        else {
-            System.out.println("insertPhotoLikesBothWays() -> error");
-        }
-    }
-
-    private void deletePhotoLikesBothWays(User userLogged, Photo photo) {
-        if (photo.getUsers().contains(userLogged)) {
-            photo.removeUser(userLogged);
-            session.save(userLogged);
-        } else if (userLogged.getPhotos().contains(photo)) {
-            userLogged.removePhoto(photo);
-            session.delete(photo);
+            session.delete(album);
+            deleteTransaction.commit();
         } else {
-            System.out.println("deletePhotoLikesBothWays() -> error");
+            System.out.println("Album " + albumName + " does not exist");
         }
+
     }
 
     //---------------------------------------  Photo
-
     private boolean isPictureBelongToUser(User userLogged, String albumName, String photoName) {
-
         Album album = getAlbumFromDatabase(albumName, userLogged.getId());
         Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
@@ -591,7 +573,6 @@ public class Main {
     }
 
     private int getProcessingStatusWhileAddingPhoto(User userLogged, String albumName, String photoName) {
-
         Album album = getAlbumFromDatabase(albumName, userLogged.getId());
         Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
@@ -608,29 +589,28 @@ public class Main {
 
     private void addPhoto(String photoName, String albumName, User userLogged) {
         Album album = getAlbumFromDatabase(albumName, userLogged.getId());
+        if (album != null) {
+            Photo photo = new Photo();
+            photo.setName(photoName);
+            photo.setAlbumId(album.getId());
+            photo.setDate(getLocalDate());
 
-        Photo photo = new Photo();
-        photo.setName(photoName);
-        photo.setAlbumId(album.getId());
-        photo.setDate(getLocalDate());
-
-        Transaction transaction = session.beginTransaction();
-        session.save(photo);
-        transaction.commit();
+            Transaction transaction = session.beginTransaction();
+            session.save(photo);
+            transaction.commit();
+        } else {
+            System.out.println("[Album " + albumName + " does not exist");
+        }
     }
 
     private void deletePhoto(String photoName, String albumName, User userLogged) {
-
         Album album = getAlbumFromDatabase(albumName, userLogged.getId());
         Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
         if (album != null && photo != null) {
             Transaction deleteTransaction = session.beginTransaction();
-            //userLogged.removePhoto(photo);
-            //session.save(userLogged);
             deletePhotoLikesBothWays(userLogged, photo);
-            //photo.removeUser(userLogged);
-
+            session.delete(photo);
             deleteTransaction.commit();
         } else {
             System.out.println("Album does not exist or photo does not exist");
@@ -638,7 +618,6 @@ public class Main {
     }
 
     private void printPhoto(User userLogged, String albumName) {
-
         Album album = getAlbumFromDatabase(albumName, userLogged.getId());
 
         for (Photo photo : album.getPhotos()) {
@@ -652,46 +631,16 @@ public class Main {
     }
 
     //---------------------------------------  Photo Likes
-
-    private void addPhotoLlike1(User userLogged, String photoName) {
-        int albumId = 13;
-        String hql = "From Photo p where p.name=" + "'Z 1'" + " and p.albumId=" + albumId;
-        Query<Photo> query = session.createQuery(hql, Photo.class);
-        Photo photo = query.uniqueResult();
-
-        // from user side
-        userLogged.addPhoto(photo);
-
-        // from photo side
-        //photo.addUser(user);
-
-        Transaction transaction = session.beginTransaction();
-        transaction.commit();
-
-
-    }
-
-    // to do - when album name is wrong ->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     private int getProcessingStatusForPhotoLike(User userLogged, String albumName, String photoName) {
-
         Album album = getAlbumFromDatabase(albumName);
 
         if (album != null) {
-
-
             User user1 = getUserFromDatabase(album.getUserId());
 
             if (areWeFriends(userLogged, user1.getName()) || userLogged.equals(user1)) {
-
                 Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
                 if (photo != null) {
-                    /*if (photo.getUsers().contains(userLogged)) {
-                        return 1; //  like
-                    } else {
-                        return 4; // no like
-                    }*/
-
                     if (photo.getUsers().contains(userLogged)) {
                         return 1; //  like
                     } else if (userLogged.getPhotos().contains(photo)) {
@@ -699,7 +648,6 @@ public class Main {
                     } else {
                         return 4; // no like
                     }
-
                 } else {
                     return 2; // photo does not exist
                 }
@@ -711,70 +659,92 @@ public class Main {
         }
     }
 
-    private void addPhotoLike(User userLogged, String albumName, String photoName) {
-
-
-        Album album = getAlbumFromDatabase(albumName);
-
-
-        Photo photo = getPhotoFromDatabase(photoName, album.getId());
-
-        // from photo side
-        //photo.addUser(userLogged);
-
-        // from user side
-        userLogged.addPhoto(photo);
-
-        Transaction transaction = session.beginTransaction();
-        //insertPhotoLikesBothWays(userLogged, photo);
-
-        /*if(!photo.getUsers().contains(userLogged)) {
+    private void insertPhotoLikesBothWays(User userLogged, Photo photo) {
+        if (!photo.getUsers().contains(userLogged)) {
             photo.addUser(userLogged);
-             session.save(photo);
-        }
-        else if (!userLogged.getPhotos().contains(photo)) {
+            session.save(photo);
+        } else if (!userLogged.getPhotos().contains(photo)) {
             userLogged.addPhoto(photo);
             session.save(userLogged);
+        } else {
+            System.out.println("insertPhotoLikesBothWays() -> error");
         }
-        else {
-            System.out.println("addPhotoLike() -> error");
-        }*/
+    }
 
-        //Transaction transaction = session.beginTransaction();
-        session.save(photo);
-        session.save(userLogged);
-        transaction.commit();
+    private void addPhotoLike(User userLogged, String albumName, String photoName) {
+        Album album = getAlbumFromDatabase(albumName);
+
+        if (album != null) {
+            Photo photo = getPhotoFromDatabase(photoName, album.getId());
+
+            if (photo != null) {
+                // from photo side
+                //photo.addUser(userLogged);
+                // from user side
+                userLogged.addPhoto(photo);
+
+                Transaction transaction = session.beginTransaction();
+                //insertPhotoLikesBothWays(userLogged, photo);
+                session.save(userLogged);
+                transaction.commit();
+            } else {
+                System.out.println("[Photo " + photoName + " does not exist");
+            }
+        } else {
+            System.out.println("[Album " + albumName + " does not exist");
+        }
+    }
+
+    private void deletePhotoLikesBothWays(User userLogged, Photo photo) {
+        if (photo.getUsers().contains(userLogged)) {
+
+            photo.removeUser(userLogged);
+            //userLogged.removePhoto(photo);
+            session.save(photo);
+            //session.save(userLogged);
+            /*int numberOfUsers = photo.getUsers().size();
+            System.out.println("numberOfUsers: " + numberOfUsers);
+
+            for (int i = 0; i < numberOfUsers; i++) {
+                photo.removeUser(userLogged);
+                //userLogged.removePhoto(photo);
+                session.save(photo);
+                session.save(userLogged);
+            }*/
+        } else if (userLogged.getPhotos().contains(photo)) {
+
+            userLogged.removePhoto(photo);
+            session.save(userLogged);
+            //session.save(photo);
+
+           /* int numberOfPhotos= userLogged.getPhotos().size();
+            System.out.println("numberOfPhotos: " + numberOfPhotos);
+
+            for (int i = 0; i < numberOfPhotos; i++) {
+                userLogged.removePhoto(photo);
+                session.save(userLogged);
+                session.save(photo);
+            }*/
+
+        } else {
+            System.out.println("deletePhotoLikesBothWays() -> error");
+        }
     }
 
     private void deletePhotoLlike(User userLogged, String albumName, String photoName) {
-
         Album album = getAlbumFromDatabase(albumName);
 
-        Photo photo = getPhotoFromDatabase(photoName, album.getId());
+        if (album != null) {
+            Photo photo = getPhotoFromDatabase(photoName, album.getId());
 
-        // from photo side
-        //photo.addUser(userLogged);
-
-        // from user side
-        //userLogged.addPhoto(photo);
-
-        Transaction deleteTransaction = session.beginTransaction();
-        /*if (photo.getUsers().contains(userLogged)) {
-            photo.removeUser(userLogged);
-            session.save(photo);
-        } else if (userLogged.getPhotos().contains(photo)) {
-            userLogged.removePhoto(photo);
-            session.save(userLogged);
+            if (photo != null) {
+                Transaction deleteTransaction = session.beginTransaction();
+                deletePhotoLikesBothWays(userLogged, photo);
+                deleteTransaction.commit();
+            }
         } else {
-            System.out.println("addPhotoLike() -> error");
-        }*/
-
-        deletePhotoLikesBothWays(userLogged, photo);
-
-        //Transaction deleteTransaction = session.beginTransaction();
-        //session.save(photo);
-        //session.save(userLogged);
-        deleteTransaction.commit();
+            System.out.println("[Album " + albumName + " does not exist");
+        }
     }
 
     private int countedPhotoLikes(Photo photo) {
@@ -782,60 +752,71 @@ public class Main {
     }
 
     //---------------------------------------  Friends
-
     private boolean areWeFriends(User userLogged, String friendName) {
-
         User friend = getUserFromDatabase(friendName);
-        boolean areWeFriends = false;
 
-        for (User u : userLogged.getUsers()) {
-            if (friend.equals(u))
-                areWeFriends = true;
+        if (friend != null) {
+            boolean areWeFriends = false;
+
+            for (User u : userLogged.getUsers()) {
+                if (friend.equals(u))
+                    areWeFriends = true;
+            }
+
+            for (User u : friend.getUsers()) {
+                if (userLogged.equals(u))
+                    areWeFriends = true;
+            }
+
+            if (userLogged.equals(friend))
+                areWeFriends = true; // it is good to be your own friend, but not in this case xD
+
+            return areWeFriends;
+        } else {
+            System.out.println("[Friend " + friendName + " does not exist in database.");
+            return false;
         }
-
-        for (User u : friend.getUsers()) {
-            if (userLogged.equals(u))
-                areWeFriends = true;
-        }
-
-        if (userLogged.equals(friend))
-            areWeFriends = true; // it is good to be your own friend, but not in this case xD
-
-        return areWeFriends;
     }
 
     private void addFriend(User user, String friendName) {
-
         User friend = getUserFromDatabase(friendName);
 
-        Transaction insertTransaction = session.beginTransaction();
-        user.addUser(friend);
-        //friend.addUser(user); // double data, table -> Friends
-        insertTransaction.commit();
+        if (friend != null) {
+            Transaction insertTransaction = session.beginTransaction();
+            user.addUser(friend);
+            //friend.addUser(user); // double data, table -> Friends
+            session.save(user); // added - remove
+            insertTransaction.commit();
+        } else {
+            System.out.println("[Friend " + friendName + " does not exist");
+        }
     }
 
     private void deleteFriend(User userLogged, String friendName) {
-
         User friend = getUserFromDatabase(friendName);
-        Transaction deleteTransaction = session.beginTransaction();
+        if (friend != null) {
+            Transaction deleteTransaction = session.beginTransaction();
 
-        for (User u : friend.getUsers()) {
-            if (userLogged.equals(u))
-                friend.removeUser(userLogged);
+            for (User u : friend.getUsers()) {
+                if (userLogged.equals(u)) {
+                    friend.removeUser(userLogged);
+                    session.save(friend);
+                }
+            }
+
+            for (User u : userLogged.getUsers()) {
+                if (friend.equals(u)) {
+                    userLogged.removeUser(friend);
+                    session.save(userLogged);
+                }
+            }
+            deleteTransaction.commit();
+        } else {
+            System.out.println("[Friend " + friendName + " does not exist");
         }
-
-        for (User u : userLogged.getUsers()) {
-            if (friend.equals(u))
-                userLogged.removeUser(friend);
-        }
-
-        session.save(friend);
-        session.save(userLogged);
-        deleteTransaction.commit();
     }
 
     private void printMyFriends(User userLogged) {
-
         List<User> users = getUsersFromDatabase();
 
         System.out.println("### Friends ");
@@ -859,9 +840,7 @@ public class Main {
             System.out.println("No friends.");
     }
 
-
     //---------------------------------------  Date
-
     private String getLocalDate() {
         return LocalDate.now().toString();
     }
