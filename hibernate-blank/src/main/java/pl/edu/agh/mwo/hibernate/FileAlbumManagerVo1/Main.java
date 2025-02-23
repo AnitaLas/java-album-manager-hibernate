@@ -446,13 +446,38 @@ public class Main {
         // System.out.println("album nr " + userLogged.getAlbums().size());
 
         List<Album> albums = getAlbumsFromDatabase(userLogged.getId());
-        System.out.println("album nr " + albums.size());
         for (Album album : albums) {
 
             List<Photo> photos = getPhotosFromDatabase(album.getId());
             for (Photo photo : photos) {
-                deletePhotoLikesBothWays(userLogged, photo);
-                session.delete(photo);
+                // from database, else from memory?
+                if(!photo.getUsers().isEmpty()){
+                    System.out.println("> 1 photo side");
+                    System.out.println("> ?????????????????");
+
+                    photo.getUsers().clear();
+                    session.delete(photo);
+                }
+                //
+                else{
+                    System.out.println("> 2 users side");
+                    List<User> users = getUsersFromDatabase();
+                    for(User user : users){
+                        System.out.println("> 2a " + user);
+                        if(!user.getPhotos().isEmpty()){
+                            for (Photo p : user.getPhotos()) {
+                                System.out.println("> 2b " + p);
+                                if(p.equals(photo)){
+                                    System.out.println("> 2c " + user);
+                                    user.removePhoto(photo);
+                                    session.save(user);
+                                    System.out.println("> 2c -- ");
+                                }
+                            }
+                        }
+                    }
+                    session.delete(photo);
+                }
             }
             session.delete(album);
         }
@@ -547,10 +572,38 @@ public class Main {
             List<Photo> photos = getPhotosFromDatabase(album.getId());
 
             for (Photo photo : photos) {
-                deletePhotoLikesBothWays(userLogged, photo);
+
+                // from database, else from memory?
+                if(!photo.getUsers().isEmpty()){
+                    System.out.println("> 1 photo side");
+                    System.out.println("> ?????????????????");
+
+                    photo.getUsers().clear();
+                    session.delete(photo);
+                }
+                //
+                else{
+                    System.out.println("> 2 users side");
+                    List<User> users = getUsersFromDatabase();
+                    for(User user : users){
+                        System.out.println("> 2a " + user);
+                        if(!user.getPhotos().isEmpty()){
+                            for (Photo p : user.getPhotos()) {
+                                System.out.println("> 2b " + p);
+                                if(p.equals(photo)){
+                                    System.out.println("> 2c " + user);
+                                    user.removePhoto(photo);
+                                    session.save(user);
+                                    System.out.println("> 2c -- ");
+                                }
+                            }
+                        }
+                    }
+                    session.delete(photo);
+                }
+
                 album.removePhoto(photo);
                 session.save(album);
-                session.delete(photo);
             }
 
             session.delete(album);
@@ -569,6 +622,11 @@ public class Main {
         if (album != null && photo != null) {
             return true;
         }
+
+        if (album != null && photo != null) {
+            return true;
+        }
+
         return false;
     }
 
@@ -609,8 +667,52 @@ public class Main {
 
         if (album != null && photo != null) {
             Transaction deleteTransaction = session.beginTransaction();
-            deletePhotoLikesBothWays(userLogged, photo);
-            session.delete(photo);
+            //deleteRelationPhotoLikesBothWays(photo);
+
+            // if database, else from memory ?
+            if(!photo.getUsers().isEmpty()){
+
+
+               /* Set<User> users = photo.getUsers();
+                for(User user : users){
+                    System.out.println("> 1a  " + user);
+                   // if(user.equals(userLogged)){
+                        //System.out.println("> 1b  " + user);
+                        photo.removeUser(user);
+                    session.save(photo);
+                    System.out.println("> 1b  " + user);
+                }*/
+
+                // keeps in longer version
+                /*for(Iterator<User> iterator = users.iterator(); iterator.hasNext();){
+                    User user = iterator.next();
+                    photo.removeUser(user);
+                    session.save(photo);
+                }*/
+
+                //session.save(photo);
+               //session.delete(photo); // delete photoLike to
+
+                photo.getUsers().clear();
+                session.delete(photo);
+            }
+            // ---
+            else{
+                List<User> users = getUsersFromDatabase();
+                for(User user : users){
+                    if(!user.getPhotos().isEmpty()){
+                        for (Photo p : user.getPhotos()) {
+                            if(p.equals(photo)){
+                                user.removePhoto(photo);
+                                session.save(user);
+                            }
+                        }
+                    }
+                }
+               session.delete(photo);
+            }
+
+            //session.delete(photo); // like added as photo is remove data
             deleteTransaction.commit();
         } else {
             System.out.println("Album does not exist or photo does not exist");
@@ -685,6 +787,7 @@ public class Main {
 
                 Transaction transaction = session.beginTransaction();
                 //insertPhotoLikesBothWays(userLogged, photo);
+                //session.save(photo);
                 session.save(userLogged);
                 transaction.commit();
             } else {
@@ -695,40 +798,33 @@ public class Main {
         }
     }
 
-    private void deletePhotoLikesBothWays(User userLogged, Photo photo) {
-        if (photo.getUsers().contains(userLogged)) {
 
-            photo.removeUser(userLogged);
-            //userLogged.removePhoto(photo);
-            session.save(photo);
-            //session.save(userLogged);
-            /*int numberOfUsers = photo.getUsers().size();
-            System.out.println("numberOfUsers: " + numberOfUsers);
+    private void deleteRelationPhotoLikesBothWays(Photo photo) {
 
-            for (int i = 0; i < numberOfUsers; i++) {
-                photo.removeUser(userLogged);
-                //userLogged.removePhoto(photo);
-                session.save(photo);
-                session.save(userLogged);
-            }*/
-        } else if (userLogged.getPhotos().contains(photo)) {
+        // get code form one of the method to delete
+        /*System.out.println(">>> 1 ");
 
-            userLogged.removePhoto(photo);
-            session.save(userLogged);
-            //session.save(photo);
-
-           /* int numberOfPhotos= userLogged.getPhotos().size();
-            System.out.println("numberOfPhotos: " + numberOfPhotos);
-
-            for (int i = 0; i < numberOfPhotos; i++) {
-                userLogged.removePhoto(photo);
-                session.save(userLogged);
-                session.save(photo);
-            }*/
-
-        } else {
-            System.out.println("deletePhotoLikesBothWays() -> error");
+        if (!photo.getUsers().isEmpty()) {
+            // photo side - do BBB nie wchodzi
+            for (User user : photo.getUsers()) {
+                System.out.println(">>> AAAA ");
+                System.out.println(">>> photo " + photo);
+                System.out.println(">>> user " + user);
+                user.removePhoto(photo); // nic nie usuwa nic
+                //photo.removeUser(user); // error
+                session.save(user);
+            }
         }
+        else{
+            for(User user : photo.getUsers()){
+                System.out.println(">>> BBBB ");
+                System.out.println(">>> photo " + photo);
+                System.out.println(">>> user " + user);
+                user.removePhoto(photo);
+                session.save(photo);
+            }
+        }*/
+
     }
 
     private void deletePhotoLlike(User userLogged, String albumName, String photoName) {
@@ -739,7 +835,12 @@ public class Main {
 
             if (photo != null) {
                 Transaction deleteTransaction = session.beginTransaction();
-                deletePhotoLikesBothWays(userLogged, photo);
+                //deleteRelationPhotoLikesBothWays(userLogged, photo);
+                // add by user
+                userLogged.removePhoto(photo);
+                photo.removeUser(userLogged);
+
+                session.save(photo);
                 deleteTransaction.commit();
             }
         } else {
