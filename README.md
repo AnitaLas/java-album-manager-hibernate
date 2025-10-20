@@ -1,4 +1,4 @@
-# Album Manager 📸
+# 📸 Album Manager 
 
 A simple console application for managing photo albums.
 
